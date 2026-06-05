@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import { applyTaskUpdate, buildTask, filterByStatus, sortByPosition } from './tasks.js';
+import { applyTaskUpdate, buildTask, filterByStatus, getNextPosition, reorderTasks, sortByPosition } from './tasks.js';
 import { createTaskStore } from './store.js';
 
 export function createApp(store = createTaskStore()) {
@@ -31,16 +31,32 @@ export function createApp(store = createTaskStore()) {
   app.post('/api/tasks', async (req, res, next) => {
     try {
       const tasks = await store.list();
-      const result = buildTask(req.body, tasks.length);
+      const result = buildTask(req.body, getNextPosition(tasks));
 
-      // Added title validation error response
       if (result.error) {
         return res.status(400).json({ error: result.error });
       }
 
       await store.save([...tasks, result.task]);
 
-      return res.status(201).json({ task: result.task }); // changed to 201 Created
+      return res.status(201).json({ task: result.task });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  app.patch('/api/tasks/reorder', async (req, res, next) => {
+    try {
+      const tasks = await store.list();
+      const result = reorderTasks(tasks, req.body.orderedIds);
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      await store.save(result.tasks);
+
+      return res.json({ tasks: sortByPosition(result.tasks) });
     } catch (error) {
       return next(error);
     }

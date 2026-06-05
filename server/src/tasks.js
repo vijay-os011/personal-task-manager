@@ -46,10 +46,19 @@ export function filterByStatus(tasks, status = 'all') {
   return tasks;
 }
 
+export function getNextPosition(tasks) {
+  if (tasks.length === 0) {
+    return 0;
+  }
+
+  const positions = tasks.map((task) => (Number.isFinite(task.position) ? task.position : fallbackPosition(task)));
+
+  return Math.min(...positions) - 1;
+}
+
 export function buildTask(payload, position = 0) {
   const title = cleanString(payload.title);
 
-  // Added title validation check
   if (!title) {
     return { error: 'Title is required.' };
   }
@@ -68,6 +77,28 @@ export function buildTask(payload, position = 0) {
       updatedAt: now
     }
   };
+}
+
+export function reorderTasks(tasks, orderedIds) {
+  if (!Array.isArray(orderedIds) || orderedIds.length !== tasks.length) {
+    return { error: 'orderedIds must include every task id exactly once.' };
+  }
+
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
+  const uniqueIds = new Set(orderedIds);
+
+  if (uniqueIds.size !== tasks.length || orderedIds.some((id) => !taskById.has(id))) {
+    return { error: 'orderedIds must include every task id exactly once.' };
+  }
+
+  const now = new Date().toISOString();
+  const reorderedTasks = orderedIds.map((id, index) => ({
+    ...taskById.get(id),
+    position: index,
+    updatedAt: now
+  }));
+
+  return { tasks: reorderedTasks };
 }
 
 export function applyTaskUpdate(task, payload) {
