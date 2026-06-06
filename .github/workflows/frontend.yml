@@ -12,6 +12,7 @@ on:
       - main # Change to 'master' if your default branch is named master
     paths:
       - 'client/**' # Only run when files in the client folder change
+  workflow_dispatch:
 
 permissions:
   contents: write
