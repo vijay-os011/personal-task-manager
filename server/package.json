@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "cors": "^2.8.5",
