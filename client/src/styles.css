@@ -317,7 +317,9 @@ textarea:focus {
   background: #f7faf9;
 }
 
-.task-item.overdue {\n  border-left-color: red;\n}
+.task-item.overdue {
+  border-left-color: #c44935;
+}
 
 .icon-button {
   display: inline-grid;
@@ -395,7 +397,12 @@ textarea:focus {
   font-size: 0.9rem;
 }
 
-.task-meta strong {\n  color: red;\n  background: #ffebeb;\n}
+.task-meta strong {
+  border-radius: 6px;
+  background: #fff1ed;
+  color: #a33222;
+  padding: 3px 8px;
+}
 
 .edit-form {
   display: grid;

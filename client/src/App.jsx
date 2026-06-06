@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { arrayMove } from '@dnd-kit/sortable';
 import { TaskForm } from './components/TaskForm.jsx';
 import { TaskList } from './components/TaskList.jsx';
 import { TaskToolbar } from './components/TaskToolbar.jsx';
-import { createTask as createTaskRequest, deleteTask as deleteTaskRequest, getTasks, updateTask as updateTaskRequest } from './lib/api.js';
+import { createTask as createTaskRequest, deleteTask as deleteTaskRequest, getTasks, reorderTasks, updateTask as updateTaskRequest } from './lib/api.js';
 
 export function App() {
   const [tasks, setTasks] = useState([]);
@@ -32,6 +33,8 @@ export function App() {
     });
   }, [tasks, status, searchTerm]);
 
+  const canReorder = status === 'all' && searchTerm.trim() === '';
+
   useEffect(() => {
     loadTasks();
   }, []);
@@ -42,7 +45,6 @@ export function App() {
 
     try {
       const data = await getTasks();
-      console.log("loaded tasks: ", data.tasks); // temp debug log
       setTasks(data.tasks);
     } catch (requestError) {
       setError(requestError.message);
@@ -54,7 +56,6 @@ export function App() {
   async function createTask(payload) {
     setIsSaving(true);
     setError('');
-    console.log("creating task: ", payload); // temp debug log
 
     try {
       const data = await createTaskRequest(payload);
@@ -84,6 +85,32 @@ export function App() {
       await deleteTaskRequest(id);
       setTasks((currentTasks) => currentTasks.filter((task) => task.id !== id));
     } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function reorderTask(activeId, overId) {
+    if (!overId || activeId === overId || !canReorder) {
+      return;
+    }
+
+    const oldIndex = tasks.findIndex((task) => task.id === activeId);
+    const newIndex = tasks.findIndex((task) => task.id === overId);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    const previousTasks = tasks;
+    const nextTasks = arrayMove(tasks, oldIndex, newIndex);
+    setTasks(nextTasks);
+    setError('');
+
+    try {
+      const data = await reorderTasks(nextTasks.map((task) => task.id));
+      setTasks(data.tasks);
+    } catch (requestError) {
+      setTasks(previousTasks);
       setError(requestError.message);
     }
   }
@@ -121,8 +148,8 @@ export function App() {
 
         <TaskList
           tasks={visibleTasks}
-          canReorder={false}
-          onReorder={() => {}}
+          canReorder={canReorder}
+          onReorder={reorderTask}
           onUpdate={updateTask}
           onDelete={deleteTask}
         />
